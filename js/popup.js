@@ -38,6 +38,9 @@ const downData = [];
 const favicon = new Map();
 // 当前页面DOM
 let pageDOM = undefined;
+// 在线合并 缓存
+let mergeCache = null;
+let mergeCacheGroup = 0;
 // HeartBeat
 chrome.runtime.sendMessage(chrome.runtime.id, { Message: "HeartBeat" });
 // 清理冗余数据
@@ -105,6 +108,7 @@ function AddMedia(data, currentTab = true) {
                 <input type="checkbox" class="DownCheck"/>
                 ${G.ShowWebIco ? `<img class="favicon ${!data.favIconUrl ? "faviconFlag" : ""}" requestId="${data.requestId}" src="${data.favIconUrl}"/>` : ""}
                 <img src="img/regex.png" class="regex ${data.isRegex ? "" : "hide"}" title="${i18n.regexTitle}"/>
+                <span class="group"></span>
                 <span class="name ${data.parsing || data.isRegex || data.tabId == -1 ? "bold" : ""}">${trimName}</span>
                 <span class="size ${data.size ? "" : "hide"}">${data.size}</span>
                 <img src="img/copy.png" class="icon copy" id="copy" title="${i18n.copy}"/>
@@ -395,6 +399,16 @@ function AddMedia(data, currentTab = true) {
             data.html.find('input').prop("checked", newValue);
         }
     });
+
+    // 多选框状态 设置时间内加入的资源 直接勾选
+    if (Math.abs(data.getTime - mergeCache?.getTime) <= G.groupTime) {
+        mergeCacheGroup++;
+        data.html.find(".group").html(`[${mergeCacheGroup}]`);
+        mergeCache.html.find(".group").html(`[${mergeCacheGroup}]`);
+        data.group = mergeCacheGroup;
+    } else {
+        mergeCache = data;
+    }
 
     // 数据发送
     data.html.find("#send2local").click(function () {
